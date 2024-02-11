@@ -1,16 +1,53 @@
-# Spring Boot Maven Example Hello World
+# Docs for the Azure Web Apps Deploy action: https://github.com/Azure/webapps-deploy
+# More GitHub Actions for Azure: https://github.com/Azure/actions
 
-Guide
+name: Build and deploy JAR app to Azure Web App - kanchi-first-app
 
-This is a part of the tutorial http://javabycode.com/spring-framework-tutorial/spring-boot-tutorial/spring-boot-maven-example-hello-world.html
+on:
+  push:
+    branches:
+      - master
+  workflow_dispatch:
 
-What you'll need
+jobs:
+  build:
+    runs-on: ubuntu-latest
 
-    JDK 1.7 or later
-    Maven 3 or later
-    spring-boot 1.3.5.RELEASE
+    steps:
+      - uses: actions/checkout@v4
 
+      - name: Set up Java version
+        uses: actions/setup-java@v1
+        with:
+          java-version: '11'
 
-Run
+      - name: Build with Maven
+        run: mvn clean install
 
-    mvn spring-boot:run
+      - name: Upload artifact for deployment job
+        uses: actions/upload-artifact@v3
+        with:
+          name: java-app
+          path: '${{ github.workspace }}/target/*.jar'
+
+  deploy:
+    runs-on: ubuntu-latest
+    needs: build
+    environment:
+      name: 'production'
+      url: ${{ steps.deploy-to-webapp.outputs.webapp-url }}
+      
+    steps:
+      - name: Download artifact from build job
+        uses: actions/download-artifact@v3
+        with:
+          name: java-app
+      
+      - name: Deploy to Azure Web App
+        id: deploy-to-webapp
+        uses: azure/webapps-deploy@v2
+        with:
+          app-name: 'kanchi-first-app'
+          slot-name: 'production'
+          package: '*.jar'
+          publish-profile: ${{ secrets.AzureAppService_PublishProfile_1cb431632be24d0a99fbc3f9ea9e2891 }}
